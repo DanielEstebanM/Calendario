@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Calendario">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="movil/icon-192.png">
+    <title>Calendario</title>
+    <link rel="icon" type="image/png" href="movil/icon-192.png">
+    <!-- Todo en local (carpeta vendor/): la app funciona sin conexión -->
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="vendor/uicons/uicons-solid-rounded.css">
+    <link rel="stylesheet" href="vendor/uicons/uicons-solid-straight.css">
+    <link rel="stylesheet" href="vendor/uicons/uicons-regular-rounded.css">
+    <link rel="stylesheet" href="vendor/uicons/uicons-bold-rounded.css">
+    <link rel="stylesheet" href="vendor/uicons/uicons-chubby-fallback.css">
+    <link rel="stylesheet" href="vendor/uicons/uicons-solid-chubby.css">
+    <link rel="stylesheet" href="vendor/uicons/uicons-regular-chubby.css">
+    <link rel="stylesheet" href="vendor/fonts/fonts.css">
+    <script src="vendor/uicons/icon-list.js"></script>
+    <script src="vendor/js/html2canvas.min.js"></script>
+    <script src="vendor/js/jspdf.umd.min.js"></script>
+    <script src="vendor/js/pdf.min.js"></script>
+    <script src="vendor/js/jszip.min.js"></script>
+    <script src="vendor/js/docx-preview.min.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="movil/mobile.css">
+</head>
+
+<body>
+    <div class="window-drag-region"></div>
+    <div class="window-controls" id="windowControlsContainer">
+        <div class="wc-btn" id="wcMinimize" role="button" tabindex="0" title="Minimizar">
+            <svg viewBox="0 0 12 12">
+                <line x1="2" y1="6" x2="10" y2="6" />
+            </svg>
+        </div>
+        <div class="wc-btn" id="wcMaximize" role="button" tabindex="0" title="Ampliar">
+            <svg viewBox="0 0 12 12">
+                <rect x="2" y="2" width="8" height="8" rx="1" />
+            </svg>
+        </div>
+        <div class="wc-btn wc-close" id="wcClose" role="button" tabindex="0" title="Cerrar">
+            <svg viewBox="0 0 12 12">
+                <line x1="2" y1="2" x2="10" y2="10" />
+                <line x1="10" y1="2" x2="2" y2="10" />
+            </svg>
+        </div>
+    </div>
+    <!-- SCROLL PERSONALIZADO FLOTANTE -->
+    <div id="custom-scrollbar">
+        <div id="custom-scrollbar-thumb"></div>
+    </div>
+
+    <!-- Barra de activación del header -->
+    <div class="header-activator"></div>
+
+    <!-- Header fijo -->
+    <div class="calendar-header" id="calendarHeader">
+        <div class="nav-container">
+            <div class="month-year" id="currentMonth">Septiembre 2025</div>
+        </div>
+        <div class="calendar-nav" id="calendarNav">
+            <button id="prevMonth" class="nav-button"><i class="fas fa-chevron-left"></i> <span>Anterior</span></button>
+            <button id="nextMonth" class="nav-button"><span>Siguiente</span> <i
+                    class="fas fa-chevron-right"></i></button>
+            <button id="todayBtn" class="nav-button"><i class="fi fi-br-bullseye-arrow"></i> <span>Hoy</span></button>
+            <button id="addEventBtn" class="nav-button"><i class="fas fa-plus"></i> <span>Nuevo</span></button>
+            <div class="search-top-container">
+                <button class="search-toggle" id="searchToggle">
+                    <i class="fi fi-sc-search"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="search-container" id="searchContainer">
+            <div class="search-input-wrap">
+                <input type="text" id="searchInput" maxlength="100" class="search-input"
+                    placeholder="Buscar eventos por nombre...">
+                <button type="button" id="searchFilterBtn" title="Filtros">
+                    <i class="fas fa-filter"></i>
+                    <span class="sfp-badge"></span>
+                </button>
+            </div>
+            <div class="close-search" id="closeSearch">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menú lateral izquierdo (iconos) -->
+    <div class="left-menu-toggle" id="leftMenuToggle"></div>
+    <div class="left-menu" id="leftMenu">
+        <button class="left-menu-icon" id="menuUpcoming" title="Eventos">
+            <i class="fi fi-sc-star"></i>
+        </button>
+        <button class="left-menu-icon" id="menuAgenda" title="Agenda de hoy">
+            <i class="fi fi-sr-calendar-clock"></i>
+        </button>
+        <button class="left-menu-icon" id="menuAddEvent" title="Añadir evento">
+            <i class="fas fa-plus-circle"></i>
+        </button>
+        <button class="left-menu-icon" id="menuDocuments" title="Documentos">
+            <i class="fi fi-sr-document"></i>
+        </button>
+        <button class="left-menu-icon" id="menuSettings" title="Configuración">
+            <i class="fi fi-sr-settings"></i>
+        </button>
+    </div>
+
+    <!-- Submenú de configuración (calado del menú principal) -->
+    <div class="config-submenu" id="configSubmenu">
+        <button class="config-submenu-item" id="darkModeBtn" title="Modo oscuro">
+            <i class="fi fi-ss-moon"></i>
+        </button>
+        <button class="config-submenu-item" id="bgColorBtn" title="Color de fondo">
+            <i class="fas fa-palette"></i>
+        </button>
+        <button class="config-submenu-item" id="exportBtn" title="Exportar…"><i
+                class="fi fi-sr-file-download"></i></button>
+        <button class="config-submenu-item" id="importBtn" title="Importar…"><i
+                class="fi fi-sr-file-upload"></i></button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+        <input type="file" id="importIcsFile" accept=".ics,text/calendar" hidden>
+        <button class="config-submenu-item" id="notifSoundBtn" title="Sonido de avisos"><i
+                class="fi fi-sr-bell"></i></button>
+    </div>
+
+    <!-- Submenú de colores (calado del menú principal) -->
+    <div class="color-submenu" id="colorSubmenu">
+        <!-- Se genera dinámicamente con JS -->
+    </div>
+
+    <!-- Sidebar de Eventos (Próximos eventos / Eventos del mes) -->
+    <div class="upcoming-sidebar" id="upcomingSidebar">
+        <div class="ev-topbar">
+            <div class="ev-tabs">
+                <div class="ev-tab active" id="evTabUpcoming" role="button" tabindex="0">Próximos eventos</div>
+                <hr>
+                <div class="ev-tab" id="evTabMonth" role="button" tabindex="0">Eventos</div>
+            </div>
+            <div class="close-sidebar" id="closeSidebar">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+
+        <div class="upcoming-events-list" id="upcomingEventsList"></div>
+
+        <div class="events-panel" id="eventsPanel" style="display:none">
+            <div class="doc-search ev-search" id="evSearch">
+                <i class="fi fi-sc-search"></i>
+                <input type="text" id="evSearchInput" maxlength="100" placeholder="Buscar en los eventos del mes..."
+                    autocomplete="off" spellcheck="false">
+                <div class="doc-search-clear" id="evSearchClear" role="button" aria-label="Borrar búsqueda"><i
+                        class="fas fa-xmark"></i></div>
+                <div class="ev-filter-btn" id="evFilterBtn" role="button" tabindex="0" title="Filtros"><i
+                        class="fas fa-filter"></i><span class="sfp-badge"></span></div>
+            </div>
+            <div class="ev-chips" id="evSortChips"></div>
+            <div class="ev-list" id="evList"></div>
+            <div class="ev-pager" id="evPager"></div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         AGENDA DE HOY (POPUP GRANDE CON ANIMACIÓN DE OPACIDAD)
+         ============================================ -->
+    <div class="agenda-popup" id="agendaPopup">
+        <div class="agenda-header">
+            <h2><i class="fi fi-sr-calendar-clock"></i> <span id="agendaTitle">Agenda de hoy</span></h2>
+            <div class="agenda-actions">
+                <button type="button" id="agendaModeBtn">Agenda semanal</button>
+                <button type="button" id="agendaTodayBtn">Hoy</button>
+                <div class="agenda-nav">
+                    <button type="button" id="agendaPrev" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+                    <button type="button" id="agendaNext" title="Siguiente"><i
+                            class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="agenda-close" id="closeAgendaPopup">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+        <div class="agenda-body" id="agendaBody">
+            <!-- Se genera dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Botones flotantes de documentos (aparecen desde DETRÁS del sidebar) -->
+    <div class="documents-float-buttons" id="documentsFloatButtons">
+        <button class="doc-float-btn" id="createFileBtn" data-tooltip="Nuevo archivo">
+            <i class="fi fi-sr-add-document"></i>
+        </button>
+        <button class="doc-float-btn" id="createFolderBtn" data-tooltip="Nueva carpeta">
+            <i class="fi fi-sr-add-folder"></i>
+        </button>
+        <button class="doc-float-btn" id="importDocBtn" data-tooltip="Importar Word o PDF">
+            <i class="fi fi-sr-file-upload"></i>
+        </button>
+        <input type="file" id="importDocFile"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            hidden>
+    </div>
+
+    <!-- Tirador para expandir el sidebar de documentos a todo el ancho -->
+    <div class="doc-expand-toggle" id="docExpandToggle" title="Expandir"><i class="fas fa-chevron-left"></i></div>
+
+    <!-- Sidebar de Documentos -->
+    <div class="documents-sidebar" id="documentsSidebar">
+        <div class="documents-topbar">
+            <div class="doc-order-toggle">
+                <button class="doc-order-btn active" id="orderOrderedBtn" data-order="ordered">
+                    Ordenado
+                </button>
+                <hr>
+                <button class="doc-order-btn" id="orderUnorderedBtn" data-order="unordered">
+                    Sin ordenar
+                </button>
+            </div>
+            <div class="close-documents-sidebar" id="closeDocumentsSidebar">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+        <div class="doc-search" id="docSearch">
+            <i class="fi fi-sc-search"></i>
+            <input type="text" id="docSearchInput" maxlength="100" placeholder="Buscar en documentos..."
+                autocomplete="off" spellcheck="false">
+            <button type="button" class="doc-search-clear" id="docSearchClear" aria-label="Borrar búsqueda"><i
+                    class="fas fa-xmark"></i></button>
+        </div>
+        <div class="documents-content" id="documentsContent">
+            <!-- Carpetas y archivos se renderizarán aquí -->
+        </div>
+    </div>
+
+    <!-- Modal para crear/editar carpeta (MISMO DISEÑO QUE EL RESTO DE MODALES) -->
+    <div class="modal" id="folderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="folderModalTitle">Nueva Carpeta</h2>
+                <span class="close" id="closeFolderModal">&times;</span>
+            </div>
+            <form id="folderForm">
+                <input type="hidden" id="folderId">
+                <div class="form-group">
+                    <label for="folderName">Nombre de la carpeta</label>
+                    <input type="text" id="folderName" maxlength="60" required placeholder="Nombre de la carpeta">
+                </div>
+                <div class="form-group">
+                    <label>Ubicación</label>
+                    <div class="tree-picker" id="folderParentPicker"></div>
+                </div>
+                <div class="form-group">
+                    <label>Color de la carpeta</label>
+                    <div class="color-options" id="folderColorOptions">
+                        <!-- Se genera dinámicamente -->
+                    </div>
+                    <div class="custom-color-input">
+                        <input type="color" id="folderCustomColor" value="#3c6df0">
+                        <span style="font-size:13px; color:var(--text-light);">Color personalizado</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Icono de la carpeta</label>
+                    <div class="folder-icon-preview-container">
+                        <div class="folder-icon-preview" id="folderIconPreview">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="folder-icon-actions">
+                            <div class="file-input-container">
+                                <div class="file-input-label" style="font-weight: 500;">
+                                    <i class="fi fi-br-plus" style="font-size: 10px; margin-bottom: 2px;"></i> Subir
+                                    icono
+                                </div>
+                                <input type="file" id="folderIconUpload" class="file-input" accept="image/*">
+                            </div>
+                            <button type="button" id="removeFolderIconBtn" class="secondary"
+                                style="padding: 8px 12px; font-size: 12px; justify-content: center;">
+                                <i class="fas fa-times"></i> Quitar icono
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" style="padding: 10px 10px 11px 10px; font-size: 13px;">
+                    <i class="fi fi-sr-disk"></i> Guardar Carpeta
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Guardar como -->
+    <div class="modal" id="saveAsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Guardar como</h2>
+                <span class="close" id="closeSaveAsModal">&times;</span>
+            </div>
+            <form id="saveAsForm">
+                <div class="form-group">
+                    <label for="saveAsName">Nombre del archivo</label>
+                    <input type="text" id="saveAsName" maxlength="200" required placeholder="Nombre del archivo">
+                </div>
+                <div class="form-group">
+                    <label>Guardar en</label>
+                    <div class="tree-picker" id="saveAsFolderPicker"></div>
+                </div>
+                <button type="submit" style="padding: 10px 10px 11px 10px; font-size: 13px;">
+                    <i class="fi fi-sr-disk"></i> Guardar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Importar documento (Word / PDF) -->
+    <div class="modal" id="importDocModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="importDocTitle">Importar documento</h2>
+                <span class="close" id="closeImportDocModal">&times;</span>
+            </div>
+            <form id="importDocForm">
+                <div class="form-group">
+                    <label>Archivo</label>
+                    <div class="import-doc-info" id="importDocInfo"></div>
+                </div>
+                <div class="form-group">
+                    <label for="importDocName">Nombre en la lista</label>
+                    <input type="text" id="importDocName" required maxlength="200" placeholder="Nombre del documento">
+                </div>
+                <div class="form-group">
+                    <label>Guardar en</label>
+                    <div class="tree-picker" id="importDocFolderPicker"></div>
+                </div>
+                <button type="submit" id="importDocSubmit" style="padding: 10px 10px 11px 10px; font-size: 13px;">
+                    <i class="fi fi-sr-disk"></i> Importar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación personalizado -->
+    <div class="modal" id="confirmModal">
+        <div class="confirm-modal-content">
+            <div class="confirm-icon-container">
+                <div class="confirm-icon-circle" id="confirmIcon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L1 21h22L12 2z" fill="currentColor" />
+                        <path d="M12 9v5" stroke="#f0f9f9" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="12" cy="17.5" r="1.2" fill="#f0f9f9" />
+                    </svg>
+                </div>
+            </div>
+            <h2 class="confirm-title" id="confirmTitle">Delete File</h2>
+            <p class="confirm-message" id="confirmMessage">This will delete all files since you last saved</p>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-btn confirm-btn-cancel" id="confirmCancelBtn">Cancel</button>
+                <button type="button" class="confirm-btn confirm-btn-delete" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de filtros del buscador -->
+    <div class="search-filter-pop" id="searchFilterPop">
+        <div class="sfp-head">
+            <span>Filtros</span>
+            <span class="sfp-clear" id="sfpClear">Limpiar</span>
+        </div>
+
+        <div class="sfp-label">Categoría</div>
+        <div class="sfp-chips" id="sfpCategories"></div>
+
+        <div class="sfp-label">Importancia</div>
+        <div class="sfp-seg" id="sfpImportance">
+            <div data-v="all">Todos</div>
+            <div data-v="yes">Importantes</div>
+            <div data-v="no">No importantes</div>
+        </div>
+
+        <div class="sfp-label">Ubicación</div>
+        <input type="text" id="sfpLocation" maxlength="100" placeholder="Contiene..." autocomplete="off"
+            spellcheck="false">
+    </div>
+
+    <!-- Panel de filtros de la barra lateral de Eventos (mismo estilo que el del buscador) -->
+    <div class="search-filter-pop" id="evFilterPop" style="z-index: 40000;">
+        <div class="sfp-head">
+            <span>Filtros</span>
+            <span class="sfp-clear" id="evfClear">Limpiar</span>
+        </div>
+
+        <div class="sfp-label">Estado</div>
+        <div class="sfp-chips" id="evfStatus"></div>
+
+        <div class="sfp-label">Categoría</div>
+        <div class="sfp-chips" id="evfCategories"></div>
+
+        <div class="sfp-label">Importancia</div>
+        <div class="sfp-seg" id="evfImportance">
+            <div data-v="all">Todos</div>
+            <div data-v="yes">Importantes</div>
+            <div data-v="no">No importantes</div>
+        </div>
+
+        <div class="sfp-label">Ubicación</div>
+        <input type="text" id="evfLocation" maxlength="100" placeholder="Contiene..." autocomplete="off"
+            spellcheck="false">
+    </div>
+
+    <!-- Selector de documentos para adjuntar a un evento -->
+    <div class="modal" id="eventDocPicker">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Adjuntar documentos</h2>
+                <span class="close" id="eventDocPickerClose">&times;</span>
+            </div>
+            <input type="text" id="eventDocPickerSearch" maxlength="100" placeholder="Buscar documento..."
+                autocomplete="off" spellcheck="false">
+            <div class="ev-pick-list" id="eventDocPickerList"></div>
+            <button type="button" id="eventDocPickerDone"
+                style="padding: 10px 10px 11px 10px; font-size: 13px; margin-top: 14px;">Aceptar</button>
+        </div>
+    </div>
+
+    <!-- Visor de PDF integrado -->
+    <div class="pdf-viewer-overlay" id="pdfViewerOverlay"></div>
+    <div class="pdf-viewer-panel" id="pdfViewerPanel">
+        <div class="pdf-viewer-topbar">
+            <div class="pdf-viewer-title" id="pdfViewerTitle"></div>
+            <div class="doc-control-buttons">
+                <button type="button" class="doc-control-btn green" id="pdfViewerFullscreen"
+                    title="Pantalla completa (solo la app)">
+                    <i class="fi fi-br-expand"></i>
+                </button>
+                <button type="button" class="doc-control-btn blue" id="pdfViewerOpenWith"
+                    title="Abrir con otro programa">
+                    <i class="fi fi-sr-leave"></i>
+                </button>
+                <button type="button" class="doc-control-btn red" id="pdfViewerClose" title="Cerrar">
+                    <i class="fi fi-sc-cross"></i>
+                </button>
+            </div>
+        </div>
+        <div class="pdf-viewer-stage" id="pdfStage">
+            <div class="pdf-scroll" id="pdfScroll" tabindex="0">
+                <div class="pdf-pages" id="pdfPages"></div>
+            </div>
+            <div class="pdf-custom-scrollbar" id="pdfScrollbar">
+                <div class="pdf-custom-scrollbar-thumb" id="pdfScrollbarThumb"></div>
+            </div>
+            <div class="pdf-float-bar" id="pdfFloatBar">
+                <div class="pdf-fb-page">
+                    <input type="text" inputmode="numeric" id="pdfPageInput" value="1" aria-label="Página"
+                        autocomplete="off">
+                    <span style="margin-top: 4px !important;" class="pdf-fb-total">/ <span id="pdfPageTotal">0</span></span>
+                </div>
+                <div class="pdf-fb-sep"></div>
+                <button type="button" id="pdfZoomIn" title="Acercar"><i class="fi fi-sc-plus"></i></button>
+                <input type="text" id="pdfZoomVal" class="pdf-fb-val" inputmode="numeric" value="100%"
+                    autocomplete="off" spellcheck="false" title="Escribe el zoom (25–400) y pulsa Intro"
+                    aria-label="Zoom">
+                <button type="button" id="pdfZoomOut" title="Alejar"><i class="fi fi-sc-minus"></i></button>
+                <button type="button" id="pdfFit" title="Ajustar al ancho"><i style="font-size: 15px !important;" class="fi fi-sc-text-width"></i></button>
+                <div class="pdf-fb-sep"></div>
+                <button type="button" id="pdfDownload" title="Descargar"><i style="font-size: 15px !important;" class="fi fi-sc-download"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor de documentos estilo Word (A4 + paginación por desbordamiento) -->
+    <div class="doc-editor-overlay" id="docEditorOverlay"></div>
+
+    <!-- Muesca para restaurar el editor oculto -->
+    <div class="doc-editor-restore-tab" id="docEditorRestoreTab" title="Mostrar documento"></div>
+
+    <div class="doc-editor-panel" id="docEditorPanel">
+        <!-- Topbar con título y botones de control integrados -->
+        <div class="doc-editor-topbar">
+            <div class="doc-editor-title" id="docEditorTitle" contenteditable="true"
+                data-placeholder="Documento sin título" spellcheck="false"></div>
+            <div class="doc-control-buttons" id="docControlButtons">
+                <!-- 4º botón: acciones del documento (azul, a la izquierda del verde) -->
+                <button type="button" class="doc-control-btn blue" id="docActionsBtn" title="Acciones del documento">
+                    <i class="fi fi-sc-menu-burger"></i>
+                </button>
+                <!-- Botón verde: expandir/minimizar -->
+                <button type="button" class="doc-control-btn green" id="docExpandControlBtn"
+                    title="Expandir / Minimizar">
+                    <i class="fi fi-br-expand"></i>
+                </button>
+                <!-- Botón amarillo: ocultar (no guarda) -->
+                <button type="button" class="doc-control-btn yellow" id="docHideControlBtn" title="Ocultar">
+                    <i class="fi fi-sc-minus"></i>
+                </button>
+                <!-- Botón rojo: salir (guarda) -->
+                <button type="button" class="doc-control-btn red" id="docExitControlBtn" title="Cerrar">
+                    <i class="fi fi-sc-cross"></i>
+                </button>
+
+                <!-- Submenú de acciones (posición absoluta respecto a este contenedor) -->
+                <div class="doc-actions-menu" id="docActionsMenu">
+                    <button type="button" id="docActionsSave"><i class="fi fi-sr-disk"></i> Guardar</button>
+                    <button type="button" id="docActionsSaveAs"><i class="fi fi-sr-floppy-disk-circle-arrow-right"
+                            style="font-size: 15px !important; margin-top: 2px;"></i> Guardar como</button>
+                    <div style="position: relative;">
+                        <button type="button" id="docActionsDownload"><i class="fi fi-sr-file-export"
+                                style="font-size: 14px !important; margin-bottom: 1px;"></i> Exportar</button>
+                        <!-- Submenú de exportar (aparece a la izquierda del botón Exportar) -->
+                        <div class="doc-export-submenu" id="docExportSubmenu">
+                            <button type="button" id="exportWordOption"><i class="fi fi-sr-file-word"
+                                    style="font-size: 16px !important; color: #2b579a;"></i> Word</button>
+                            <button type="button" id="exportPdfOption"><i class="fi fi-sr-file-pdf"
+                                    style="font-size: 16px !important; color: #dc2626;"></i> PDF</button>
+                        </div>
+                    </div>
+                    <button type="button" class="danger" id="docActionsDelete"><i class="fi fi-sr-trash"
+                            style="font-size: 14px !important; margin-bottom: 1.5px;"></i> Borrar documento</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="doc-editor-body-wrap" id="docEditorBodyWrap">
+            <div class="doc-editor-body" id="docEditorBody">
+                <div class="doc-editor-pages" id="docEditorPages"></div>
+                <div class="doc-viewer-pages" id="docViewerPages"></div>
+            </div>
+            <div class="doc-editor-custom-scrollbar" id="docEditorCustomScrollbar">
+                <div class="doc-editor-custom-scrollbar-thumb" id="docEditorCustomScrollbarThumb"></div>
+            </div>
+        </div>
+
+        <!-- Barra del visor de Word (tal cual) -->
+        <div class="doc-format-bar doc-view-bar" id="docViewBar">
+            <button type="button" class="txt" id="docViewWordBtn"
+                title="Abrir en Word; al guardar allí, aquí se actualiza solo"><i class="fas fa-file-word"></i> Editar
+                en Word</button>
+            <button type="button" class="txt" id="docViewConvertBtn"
+                title="Crea una copia editable dentro de la app con el mismo aspecto; el Word original no se toca"><i
+                    class="fas fa-pen"></i> Hacer editable</button>
+
+        </div>
+
+        <!-- Barra de formato flotante -->
+        <div class="doc-format-bar" id="docFormatBar">
+            <button type="button" class="doc-style-btn" id="docStyleBtn">
+                <span id="docStyleLabel">Normal</span>
+                <i class="fas fa-chevron-down chevron"></i>
+            </button>
+            <!-- Submenú de estilos: posicionado por CSS encima del botón -->
+            <div class="doc-style-menu" id="docStyleMenu">
+                <button type="button" data-style="p" class="active"><i class="fi fi-sc-paragraph"></i> Normal</button>
+                <button type="button" data-style="h1"><i class="fi fi-rc-h1"
+                        style="font-size: 20px; margin-bottom: 1px;"></i> Título 1</button>
+                <button type="button" data-style="h2"><i class="fi fi-rc-h2"
+                        style="font-size: 18px; margin-bottom: 1px;"></i> Título 2</button>
+                <button type="button" data-style="h3"><i class="fi fi-rc-h3"
+                        style="font-size: 16px; margin-bottom: 2px;"></i> Título 3</button>
+            </div>
+
+            <div class="separator"></div>
+
+            <button type="button" class="doc-style-btn" id="docFontSizeBtn">
+                <span id="docFontSizeLabel">14px</span>
+                <i class="fas fa-chevron-down chevron"></i>
+            </button>
+            <!-- Submenú de tamaños -->
+            <div class="doc-style-menu" id="docFontSizeMenu">
+                <button type="button" data-size="1">10px</button>
+                <button type="button" data-size="2">12px</button>
+                <button type="button" data-size="3" class="active">14px</button>
+                <button type="button" data-size="4">16px</button>
+                <button type="button" data-size="5">18px</button>
+                <button type="button" data-size="6">24px</button>
+                <button type="button" data-size="7">32px</button>
+            </div>
+
+            <div class="separator"></div>
+
+            <input type="color" id="docTextColor" title="Color de texto" value="#222222">
+
+            <div class="separator"></div>
+
+            <button type="button" id="docBoldBtn" title="Negrita (Ctrl+B)"><i class="fi fi-sc-bold"></i></button>
+            <button type="button" id="docItalicBtn" title="Cursiva (Ctrl+I)"><i class="fi fi-sc-italic"></i></button>
+            <button type="button" id="docUnderlineBtn" title="Subrayado (Ctrl+U)"><i style="font-size: 13px;"
+                    class="fi fi-sc-underline"></i></button>
+            <button type="button" data-cmd="strikeThrough" title="Tachado"><i class="fas fa-strikethrough"></i></button>
+
+            <div class="separator"></div>
+
+            <button type="button" class="fmt-extra" data-cmd="insertUnorderedList" title="Lista con viñetas"><i
+                    class="fi fi-sc-list" style="font-size: 14px !important;"></i></button>
+            <button type="button" class="fmt-extra" data-cmd="insertOrderedList" title="Lista numerada"><i
+                    class="fas fa-list-ol" style="font-size: 14px !important;"></i></button>
+
+            <div class="separator"></div>
+
+            <button type="button" class="fmt-extra" data-cmd="undo" title="Deshacer (Ctrl+Z)"><i
+                    class="fi fi-sc-undo-alt" style="font-size: 14px !important;"></i></button>
+            <button type="button" class="fmt-extra" data-cmd="redo" title="Rehacer (Ctrl+Y)"><i
+                    class="fi fi-sc-redo-alt" style="font-size: 14px !important;"></i></button>
+
+            <div class="separator"></div>
+
+            <button type="button" id="docAlignBtn" title="Alinear"><i class="fi fi-sc-align-left"></i></button>
+            <!-- Submenú de alineación -->
+            <div class="doc-align-menu" id="docAlignMenu">
+                <button type="button" data-align="left" class="active" title="Izquierda"><i
+                        class="fi fi-sc-align-left"></i></button>
+                <button type="button" data-align="center" title="Centro"><i class="fi fi-sc-align-center"></i></button>
+                <button type="button" data-align="right" title="Derecha"><i style="transform: scaleX(-1);"
+                        class="fi fi-sc-align-left"></i></button>
+                <button type="button" data-align="justify" title="Justificado"><i
+                        class="fi fi-sc-align-justify"></i></button>
+            </div>
+            <button type="button" id="docToolsBtn"
+                title="Insertar y formato: enlace, imagen, tabla, interlineado, sangría, cabecera y pie, buscar"><i
+                    class="fi fi-sc-plus"></i></button>
+            <!-- Submenú "+" (mismo estilo y sitio que el de alinear) con vista principal y vista de buscar/reemplazar -->
+            <div class="doc-align-menu doc-tools-menu" id="docToolsMenu">
+                <div class="tools-views" id="toolsViews">
+                    <div class="tools-view" id="toolsMain"></div>
+                    <!-- Desplegables: el script los coloca justo debajo de su botón y empujan el resto del menú hacia arriba -->
+                    <div id="toolsPanels" hidden>
+                        <div class="tools-find" id="docHfBar">
+                            <div class="find-inner">
+                                <div class="find-body">
+                                    <input type="text" id="docHeaderInput" class="find-input" placeholder="Cabecera"
+                                        maxlength="300" autocomplete="off" spellcheck="false">
+                                    <input type="text" id="docFooterInput" class="find-input"
+                                        placeholder="Pie de página" maxlength="300" autocomplete="off"
+                                        spellcheck="false">
+                                    <div class="find-hint">{n} = nº de página · {total} = total de páginas</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tools-find" id="docFindBar">
+                            <div class="find-inner">
+                                <div class="find-body">
+                                    <div class="find-field">
+                                        <div class="find-input-wrap">
+                                            <input type="text" id="docFindInput" class="find-input" placeholder="Buscar"
+                                                autocomplete="off" spellcheck="false">
+                                            <span class="find-count" id="docFindCount"></span>
+                                        </div>
+                                        <button type="button" id="docFindCase" class="sq"
+                                            title="Distinguir mayúsculas y minúsculas">Aa</button>
+                                    </div>
+                                    <input type="text" id="docReplaceInput" class="find-input"
+                                        placeholder="Reemplazar con" autocomplete="off" spellcheck="false">
+                                    <div class="find-actions">
+                                        <button type="button" id="docFindPrev" title="Anterior (Mayús+Intro)"><i
+                                                class="fas fa-chevron-up"></i><span>Anterior</span></button>
+                                        <button type="button" id="docFindNext" title="Siguiente (Intro)"><i
+                                                class="fas fa-chevron-down"></i><span>Siguiente</span></button>
+                                    </div>
+                                    <div class="find-actions">
+                                        <button type="button" id="docReplaceOne">Reemplazar</button>
+                                        <button type="button" id="docReplaceAll">Reemplazar todo</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="button" id="docMoreBtn" title="Más opciones"><i class="fi fi-rc-menu-dots"></i></button>
+            <div class="doc-align-menu" id="docMoreMenu">
+                <button type="button" data-cmd="insertUnorderedList" title="Lista con viñetas"><i class="fi fi-sc-list"
+                        style="font-size: 14px !important;"></i></button>
+                <button type="button" data-cmd="insertOrderedList" title="Lista numerada"><i class="fas fa-list-ol"
+                        style="font-size: 14px !important;"></i></button>
+                <button type="button" data-cmd="undo" title="Deshacer"><i class="fi fi-sc-undo-alt"
+                        style="font-size: 14px !important;"></i></button>
+                <button type="button" data-cmd="redo" title="Rehacer"><i class="fi fi-sc-redo-alt"
+                        style="font-size: 14px !important;"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main-content">
+            <main class="calendar-container">
+                <div class="weekdays" id="weekdays">
+                    <div>Lunes</div>
+                    <div>Martes</div>
+                    <div>Miércoles</div>
+                    <div>Jueves</div>
+                    <div>Viernes</div>
+                    <div>Sábado</div>
+                    <div>Domingo</div>
+                </div>
+
+                <div class="weekdays-mobile" id="weekdaysMobile">
+                    <div>L</div>
+                    <div>M</div>
+                    <div>X</div>
+                    <div>J</div>
+                    <div>V</div>
+                    <div>S</div>
+                    <div>D</div>
+                </div>
+
+                <div class="calendar" id="calendar">
+                    <!-- Los días del calendario se generarán aquí dinámicamente -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para crear/editar eventos -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Nuevo Evento</h2>
+                <span class="close" id="closeEventModal">&times;</span>
+            </div>
+
+            <form id="eventForm" novalidate>
+                <input type="hidden" id="eventId">
+                <div class="form-group" id="templatesGroup" style="display:none">
+                    <label>Plantillas</label>
+                    <div class="template-list" id="templateList"></div>
+                </div>
+                <div class="form-group">
+                    <label for="eventTitle">Título del evento</label>
+                    <input type="text" id="eventTitle" maxlength="120" required placeholder="Nombre del evento">
+                </div>
+
+                <div class="datetime-container">
+                    <div class="date-group">
+                        <label for="eventStart">Fecha</label>
+                        <div class="date-range-container">
+                            <div class="date-input-wrapper">
+                                <input type="date" id="eventStart" required>
+                                <i class="fi fi-sr-calendar-day input-icon-overlay" aria-hidden="true"
+                                    style="padding-bottom: 3px !important;"></i>
+                            </div>
+                            <span class="date-range-separator">a</span>
+                            <div class="date-input-wrapper">
+                                <input type="date" id="eventEnd">
+                                <i class="fi fi-sr-calendar-day input-icon-overlay" aria-hidden="true"
+                                    style="padding-bottom: 3px !important;"></i>
+                                <button type="button" class="clear-time-btn" data-target="eventEnd"
+                                    title="Quitar fecha final">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="time-group">
+                        <div class="time-label">
+                            <label for="eventStartTime">Hora</label>
+                            <button type="button" class="day-events-toggle" id="dayEventsToggle"
+                                title="Ver eventos del día">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                        </div>
+                        <div class="time-input-group">
+                            <div class="time-input">
+                                <div class="time-input-wrapper">
+                                    <input type="time" id="eventStartTime" placeholder="Inicio">
+                                    <i class="fa-solid fa-clock input-icon-overlay" aria-hidden="true"
+                                        style="padding-bottom: 3px !important;"></i>
+                                    <button type="button" class="clear-time-btn" data-target="eventStartTime"
+                                        title="Limpiar hora">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <span class="time-separator">-</span>
+                            <div class="time-input">
+                                <div class="time-input-wrapper">
+                                    <input type="time" id="eventEndTime" placeholder="Fin">
+                                    <i class="fi fi-sr-clock-ten-thirty input-icon-overlay" aria-hidden="true"
+                                        style="padding-bottom: 3px !important;"></i>
+                                    <button type="button" class="clear-time-btn" data-target="eventEndTime"
+                                        title="Limpiar hora">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <small style="display: block; margin-top: 5px; color: var(--text-light);">Deja vacío para evento
+                            sin hora específica</small>
+
+                        <div class="day-events-dropdown" id="dayEventsDropdown">
+                            <div class="day-events-dropdown-header">
+                                <i class="fa-solid fa-bullseye"></i>
+                                <span>Eventos de hoy</span>
+                            </div>
+                            <div class="day-events-dropdown-list" id="dayEventsDropdownList">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="important-checkbox">
+                    <input type="checkbox" id="eventImportant">
+                    <label for="eventImportant">Marcar como importante</label>
+                </div>
+                <div class="form-group" id="repeatGroup"><label for="eventRepeat">Repetir</label>
+                    <div class="cselect" id="repeatSelect"><select id="eventRepeat" hidden>
+                            <option value="">No se repite</option>
+                            <option value="daily">Cada día</option>
+                            <option value="weekly">Cada semana</option>
+                            <option value="monthWeekly">Cada lunes del mes</option>
+                            <option value="monthly">Cada mes</option>
+                            <option value="yearly">Cada año</option>
+                        </select><button type="button" class="cselect-btn"><span class="cselect-label"></span><i
+                                class="fas fa-chevron-down"></i></button>
+                        <div class="cselect-menu"></div>
+                    </div>
+                </div>
+                <div class="form-group" id="repeatUntilGroup" style="display:none"><label for="eventRepeatUntil">Repetir
+                        hasta (opcional)</label>
+                    <div class="date-input-wrapper"><input type="date" id="eventRepeatUntil"><i
+                            class="fi fi-sr-calendar input-icon-overlay" aria-hidden="true"></i></div>
+                </div>
+                <div class="form-group"><label for="eventReminder">Recordatorio</label>
+                    <div class="cselect" id="reminderSelect"><select id="eventReminder" hidden>
+                            <option value="">Sin recordatorio</option>
+                            <option value="0">A la hora del evento</option>
+                            <option value="5">5 minutos antes</option>
+                            <option value="10">10 minutos antes</option>
+                            <option value="15">15 minutos antes</option>
+                            <option value="30">30 minutos antes</option>
+                            <option value="60">1 hora antes</option>
+                            <option value="120">2 horas antes</option>
+                            <option value="1440">1 día antes</option>
+                        </select><button type="button" class="cselect-btn"><span class="cselect-label"></span><i
+                                class="fas fa-chevron-down"></i></button>
+                        <div class="cselect-menu"></div>
+                    </div>
+                    <div id="reminderTimeRow" style="display:none; margin-top:10px;">
+                        <label for="eventReminderTime">Hora del aviso (evento de todo el día)</label>
+                        <div class="time-input-wrapper">
+                            <input type="time" id="eventReminderTime" value="09:00">
+                            <i class="fa-solid fa-clock input-icon-overlay" aria-hidden="true"
+                                style="padding-bottom: 3px !important;"></i>
+                        </div>
+                    </div>
+                    <small style="display: block; margin-top: 5px; color: var(--text-light);">Si el evento no tiene
+                        hora, el aviso llega a la hora que elijas (por defecto, las 09:00). La app debe estar
+                        abierta.</small>
+                </div>
+
+
+                <div class="form-group">
+                    <label>Seleccionar categoría</label>
+                    <div class="category-selector" id="categorySelector">
+                    </div>
+
+                    <div class="new-category">
+                        <input type="text" id="newCategoryName" maxlength="40" class="new-category-input"
+                            placeholder="Nueva categoría">
+                        <button type="button" id="addCategoryBtn" class="add-category-btn secondary" disabled
+                            style="padding: 10px 10px 11px 10px; font-size: 13px;">
+                            <i class="fas fa-plus"></i> Añadir
+                        </button>
+                    </div>
+
+                    <div class="category-appearance" id="categoryAppearance">
+                        <label>Apariencia de la categoría</label>
+                        <div class="appearance-options">
+                            <div class="appearance-option selected" id="categoryColorOption">
+                                <i class="fas fa-palette"></i>
+                                <div>Color</div>
+                            </div>
+                            <div class="appearance-option" id="categoryImageOption">
+                                <i class="fas fa-image"></i>
+                                <div>Imagen</div>
+                            </div>
+                        </div>
+
+                        <div id="categoryColorSelector" class="color-selector">
+                            <div class="color-picker-container">
+                                <input type="color" id="categoryColor" value="#3c6df0">
+                                <div class="color-preview" id="categoryColorPreview" style="background-color: #3c6df0;">
+                                </div>
+                            </div>
+                            <div class="icon-upload-container">
+                                <label>Icono de la categoría (24x24px)</label>
+                                <div class="new-category" style="margin-top: 10px;">
+                                    <div class="file-input-container">
+                                        <div class="file-input-label">
+                                            <i class="fa-solid fa-file-arrow-up"></i> Subir icono desde dispositivo
+                                        </div>
+                                        <input type="file" id="categoryIconUpload" class="file-input" accept="image/*">
+                                    </div>
+                                    <button type="button" id="removeIconBtn" class="secondary"
+                                        style="padding: 10px 15px;">
+                                        <i class="fas fa-times"></i> Quitar icono
+                                    </button>
+                                </div>
+                                <!-- Selector de iconos de Flaticon -->
+                                <div class="icon-picker-container" id="iconPickerContainer">
+                                    <input type="text" class="icon-picker-search" maxlength="50"
+                                        placeholder="Buscar icono..." id="iconPickerSearch">
+                                    <div id="iconPickerList" style="display: contents;">
+                                        <!-- Se generará dinámicamente con JS -->
+                                    </div>
+                                </div>
+                                <div class="icon-preview-container">
+                                    <div class="icon-preview" id="categoryIconPreview">
+                                        <div class="no-icon-placeholder">Vista previa del icono</div>
+                                    </div>
+                                    <small>El icono se mostrará a la izquierda del nombre en los eventos</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="categoryImageSelector" class="image-selector" style="display: none;">
+                            <div class="image-input-container">
+                                <div class="file-input-container">
+                                    <div class="file-input-label">
+                                        <i class="fa-solid fa-file-arrow-up"></i></i> Seleccionar imagen del dispositivo
+                                    </div>
+                                    <input type="file" id="categoryImageUpload" class="file-input" accept="image/*">
+                                </div>
+                                <div class="image-url-input">
+                                    <input type="text" id="categoryImageUrl" maxlength="2048"
+                                        placeholder="URL de la imagen">
+                                </div>
+                                <div class="image-preview" id="categoryImagePreview">
+                                    Vista previa de la imagen
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventLocation">Ubicación (opcional)</label>
+                    <div class="location-wrap">
+                        <i class="fas fa-location-dot"></i>
+                        <input type="text" id="eventLocation" maxlength="200" placeholder="Lugar del evento"
+                            autocomplete="off">
+                        <datalist id="locationList"></datalist>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Documentos adjuntos (opcional)</label>
+                    <div class="event-docs">
+                        <div class="event-docs-list" id="eventDocsList"></div>
+                        <button type="button" id="eventDocsAddBtn" class="secondary"
+                            style="padding: 10px 14px; font-size: 13px;"><i class="fas fa-paperclip"></i> Adjuntar
+                            documento</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventDescription">Descripción (opcional)</label>
+                    <textarea id="eventDescription" maxlength="1000" rows="3"
+                        placeholder="Detalles del evento"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" style="padding: 10px 10px 11px 10px; font-size: 13px;"><i
+                            class="fi fi-sr-disk"></i> Guardar Evento</button>
+                    <button type="button" id="saveTemplateBtn" class="secondary"
+                        style="padding: 10px 10px 11px 10px; font-size: 13px;"><i class="fas fa-bookmark"></i> Guardar
+                        como plantilla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ver eventos del día -->
+    <div class="modal" id="dayEventsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="dayEventsTitle">Eventos del día</h2>
+                <span class="close" id="closeDayEventsModal">&times;</span>
+            </div>
+
+            <div class="day-events" id="dayEventsList">
+            </div>
+
+            <button id="addEventToDay" style="margin-top: 20px; font-size: 12px; padding: 10px;">
+                <i class="fas fa-plus"></i> Añadir evento a este día
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para editar categorías -->
+    <div class="modal" id="editCategoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Categoría</h2>
+                <span class="close" id="closeEditCategoryModal">&times;</span>
+            </div>
+            <form id="editCategoryForm">
+                <input type="hidden" id="editCategoryId">
+                <div class="form-group">
+                    <label for="editCategoryName">Nombre de la categoría</label>
+                    <input type="text" id="editCategoryName" maxlength="40" required>
+                </div>
+                <div class="form-group">
+                    <label>Icono de la categoría (24x24px)</label>
+                    <div class="icon-upload-container">
+                        <div class="new-category">
+                            <div class="file-input-container">
+                                <div class="file-input-label">
+                                    <i class="fa-solid fa-file-arrow-up"></i></i> Subir icono desde dispositivo
+                                </div>
+                                <input type="file" id="editCategoryIconUpload" class="file-input" accept="image/*">
+                            </div>
+                            <button type="button" id="editRemoveIconBtn" class="secondary" style="padding: 10px 15px;">
+                                <i class="fas fa-times"></i> Quitar icono
+                            </button>
+                        </div>
+                        <!-- Selector de iconos de Flaticon (Edición) -->
+                        <div class="icon-picker-container" id="editIconPickerContainer">
+                            <input type="text" class="icon-picker-search" maxlength="50" placeholder="Buscar icono..."
+                                id="editIconPickerSearch">
+                            <div id="editIconPickerList" style="display: contents;">
+                                <!-- Se generará dinámicamente con JS -->
+                            </div>
+                        </div>
+                        <div class="icon-preview-container">
+                            <div class="icon-preview" id="editCategoryIconPreview">
+                                <div class="no-icon-placeholder">Vista previa del icono</div>
+                            </div>
+                            <small>El icono se mostrará a la izquierda del nombre en los eventos</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Apariencia de la categoría</label>
+                    <div class="appearance-options">
+                        <div class="appearance-option selected" id="editCategoryColorOption">
+                            <i class="fas fa-palette"></i>
+                            <div>Color</div>
+                        </div>
+                        <div class="appearance-option" id="editCategoryImageOption">
+                            <i class="fas fa-image"></i>
+                            <div>Imagen</div>
+                        </div>
+                    </div>
+
+                    <div id="editCategoryColorSelector" class="color-selector">
+                        <div class="color-picker-container">
+                            <input type="color" id="editCategoryColor">
+                            <div class="color-preview" id="editCategoryColorPreview"></div>
+                        </div>
+                    </div>
+
+                    <div id="editCategoryImageSelector" class="image-selector" style="display: none;">
+                        <div class="image-input-container">
+                            <div class="file-input-container">
+                                <div class="file-input-label">
+                                    <i class="fa-solid fa-file-arrow-up"></i></i> Seleccionar imagen del dispositivo
+                                </div>
+                                <input type="file" id="editCategoryImageUpload" class="file-input" accept="image/*">
+                            </div>
+                            <div class="image-url-input">
+                                <input type="text" id="editCategoryImageUrl" maxlength="2048"
+                                    placeholder="URL de la imagen">
+                            </div>
+                            <div class="image-preview" id="editCategoryImagePreview">
+                                Vista previa de la imagen
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" style="padding: 10px 10px 11px 10px; font-size: 13px;"><i
+                        class="fi fi-sr-disk"></i>
+                    Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="movil/shim.js"></script>
+</body>
+
+</html>

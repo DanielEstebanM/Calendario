@@ -1,0 +1,9 @@
+/* Calendario (versión móvil): ajustes que solo existen aquí. Va después de styles.css. */
+html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+/* No hay ventana propia: se quitan los botones y la zona de arrastre de la barra de título */
+.window-controls, #windowControlsContainer, .window-drag-region { display: none !important; }
+/* Respeta el notch y la barra de gestos */
+body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+input, select, textarea { font-size: max(16px, 1em); }   /* evita el zoom automático de iOS al escribir */
+/* Zona táctil de la barra superior un poco más grande */
+.header-activator { height: 22px; }
