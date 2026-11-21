@@ -1,6 +1,6 @@
 /* Calendario (versión móvil) — funciona sin conexión.
    La versión y la lista de archivos las rellena generar.js */
-const VERSION = '20261121091937';
+const VERSION = '20261121094837';
 const CACHE = 'calendario-movil-' + VERSION;
 const FILES = [
  "./",
