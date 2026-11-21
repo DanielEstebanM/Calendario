@@ -4,9 +4,9 @@
     'use strict';
 
     // ===== Gestos de deslizar =====
-    // true : deslizar a la DERECHA va al siguiente (mes/día) y a la IZQUIERDA al anterior.
-    // false: al revés (lo habitual en muchas apps).
-    const RIGHT_SWIPE_GOES_FORWARD = true;
+    // false: deslizar a la IZQUIERDA va al siguiente (mes/día) y a la DERECHA al anterior (lo habitual).
+    // true : al revés (derecha = siguiente).
+    const RIGHT_SWIPE_GOES_FORWARD = false;
     const MIN_DX = 60;        // px mínimos en horizontal
     const MAX_MS = 800;       // duración máxima del gesto
     const EDGE = 24;          // zona de los bordes que se ignora (gestos del sistema y menús laterales)
