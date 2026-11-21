@@ -20,6 +20,12 @@
         const r = d.transaction(STORE).objectStore(STORE).get(k);
         r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
     }));
+    const idbKeys = () => db().then(d => new Promise((res, rej) => {
+        const r = d.transaction(STORE).objectStore(STORE).getAllKeys();
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }));
+    // Documentos (Word/PDF) cuyo archivo está realmente en este dispositivo
+    window.__movilDocs = new Set();
     const idbSet = (k, v) => db().then(d => new Promise((res, rej) => {
         const t = d.transaction(STORE, 'readwrite');
         t.objectStore(STORE).put(v, k);
@@ -115,6 +121,7 @@
                 const name = safeName(p.name, ext);
                 const stored = rid() + '/' + name;
                 await idbSet('doc:' + stored, { name, ext, data: bytes.slice().buffer });
+                window.__movilDocs.add(stored);
                 return { ok: true, stored, ext, size: bytes.length };
             } catch (e) { console.error(e); return { ok: false, error: 'No se pudo guardar el archivo en el dispositivo.' }; }
         },
@@ -181,9 +188,18 @@
     function startApp() {
         const s = document.createElement('script');
         s.src = 'js/app.js';
+        // Cuando app.js ya está cargado se añaden los gestos y ajustes propios del móvil
+        s.onload = () => {
+            const m = document.createElement('script');
+            m.src = 'movil/mobile.js';
+            document.body.appendChild(m);
+        };
         document.body.appendChild(s);
     }
-    idbGet('data').then(d => { cache = d || null; }).catch(err => { console.error(err); }).then(startApp);
+    Promise.all([
+        idbGet('data').then(d => { cache = d || null; }),
+        idbKeys().then(keys => keys.forEach(k => { if (typeof k === 'string' && k.startsWith('doc:')) window.__movilDocs.add(k.slice(4)); }))
+    ]).catch(err => { console.error(err); }).then(startApp);
 
     // Service worker (funcionar sin conexión)
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {

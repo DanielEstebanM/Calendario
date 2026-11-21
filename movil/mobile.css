@@ -7,3 +7,11 @@ body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-ins
 input, select, textarea { font-size: max(16px, 1em); }   /* evita el zoom automático de iOS al escribir */
 /* Zona táctil de la barra superior un poco más grande */
 .header-activator { height: 22px; }
+
+/* Documentos importados: los botones (abrir con, renombrar/mover, quitar) siempre visibles, sin pasar el ratón */
+.file-item .file-actions { opacity: 1 !important; }
+.file-item .file-action-btn { width: 36px !important; height: 36px !important; font-size: 14px !important; }
+/* Documento cuyo archivo no está en este móvil */
+.file-item.doc-missing .file-description { color: #c2410c; }
+.file-item.doc-missing > i { opacity: 0.55; }
+.file-item.doc-missing .file-description { white-space: normal; font-weight: 600; }
